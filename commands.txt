@@ -1,0 +1,62 @@
+# Interview Assistant - Environment Setup Commands
+
+# 1. Install Poetry (if not already installed)
+curl -sSL https://install.python-poetry.org | python3 -
+
+# 2. Initialize Poetry project (already done)
+# poetry init
+
+# 3. Install dependencies
+poetry install
+
+# 4. Activate virtual environment (Poetry 2.0+)
+poetry env use python3.10
+poetry shell
+
+# 5. Run the application (new structure)
+poetry run streamlit run run_app.py
+
+# 6. Alternative: Run without activating shell
+poetry run streamlit run run_app.py
+
+# 7. Add new dependency
+poetry add package-name
+
+# 8. Add development dependency
+poetry add --group dev package-name
+
+# 9. Update dependencies
+poetry update
+
+# 10. Show dependency tree
+poetry show --tree
+
+# 11. Run tests
+poetry run pytest
+
+# 12. Format code
+poetry run black .
+
+# 13. Lint code
+poetry run flake8 .
+
+# 14. Type checking
+poetry run mypy .
+
+# 15. Install pre-commit hooks
+poetry run pre-commit install
+
+# 16. Run all code quality checks
+make check
+
+# 17. Clean up generated files
+make clean
+
+# 18. Build the project
+poetry build
+
+# 19. Show project info
+poetry show
+
+# 20. Export requirements (for deployment)
+poetry export -f requirements.txt --output requirements.txt --without-hashes
