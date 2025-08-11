@@ -7,10 +7,47 @@ import PyPDF2
 from docx import Document
 import streamlit as st
 from typing import Optional
+import re
 
 
 class ResumeParser:
     """Class to parse resume files and extract text content"""
+    
+    @staticmethod
+    def clean_text(text: str) -> str:
+        """
+        Clean and normalize extracted text by removing excessive whitespace and newlines
+        
+        Args:
+            text: Raw extracted text
+            
+        Returns:
+            str: Cleaned and normalized text
+        """
+        if not text:
+            return ""
+        
+        # Remove excessive newlines and replace with single spaces
+        text = re.sub(r'\n+', ' ', text)
+        
+        # Remove excessive spaces (more than 2 consecutive spaces)
+        text = re.sub(r' {2,}', ' ', text)
+        
+        # Remove leading/trailing whitespace
+        text = text.strip()
+        
+        # Normalize bullet points and special characters
+        text = re.sub(r'●\s*', '• ', text)
+        text = re.sub(r'•\s*', '• ', text)
+        
+        # Clean up common formatting artifacts
+        text = re.sub(r'\s+([•\-])', r' \1', text)  # Ensure proper spacing before bullets
+        text = re.sub(r'([•\-])\s+', r'\1 ', text)  # Ensure proper spacing after bullets
+        
+        # Remove any remaining excessive whitespace
+        text = re.sub(r' +', ' ', text)
+        
+        return text
     
     @staticmethod
     def extract_text_from_pdf(pdf_file) -> Optional[str]:
@@ -28,9 +65,13 @@ class ResumeParser:
             text = ""
             
             for page in pdf_reader.pages:
-                text += page.extract_text() + "\n"
+                page_text = page.extract_text()
+                if page_text:
+                    text += page_text + " "
                 
-            return text.strip()
+            # Clean the extracted text
+            cleaned_text = ResumeParser.clean_text(text)
+            return cleaned_text
         except Exception as e:
             st.error(f"Error reading PDF file: {str(e)}")
             return None
@@ -51,9 +92,12 @@ class ResumeParser:
             text = ""
             
             for paragraph in doc.paragraphs:
-                text += paragraph.text + "\n"
+                if paragraph.text.strip():  # Only add non-empty paragraphs
+                    text += paragraph.text + " "
                 
-            return text.strip()
+            # Clean the extracted text
+            cleaned_text = ResumeParser.clean_text(text)
+            return cleaned_text
         except Exception as e:
             st.error(f"Error reading Word document: {str(e)}")
             return None

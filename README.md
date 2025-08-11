@@ -7,11 +7,12 @@ An AI-powered interview question generator that helps interviewers prepare relev
 - **📄 Resume Parsing**: Supports PDF and Word document formats
 - **🤖 AI-Powered Questions**: Generates contextual interview questions using OpenAI GPT
 - **📊 Question Categorization**: Organizes questions by Technical Skills, Experience & Projects, Problem Solving, and Behavioral
-- **🎯 Difficulty Levels**: Questions are automatically categorized as Easy, Medium, or Hard
+- **🎯 Difficulty Levels**: Questions are generated with specified difficulty levels (Easy, Medium, Hard)
 - **🔍 Smart Filtering**: Filter questions by category and difficulty level
 - **📤 Export Options**: Export questions as CSV or copy to clipboard
 - **🎨 Modern UI**: Beautiful, responsive interface built with Streamlit
 - **⚡ Real-time Analysis**: Instant resume parsing and question generation
+- **🎯 Simplified Generation**: Clean, focused prompts ensure consistent question format and quality
 
 ## 🛠️ Installation & Setup
 
@@ -78,7 +79,7 @@ The application will open in your browser at `http://localhost:8501`
 
 ### 2. Configure Settings
 Use the sidebar to customize:
-- **Number of Questions**: Choose between 5-20 questions
+- **Number of Questions**: Choose between 1-10 questions (maximum 10)
 - **Difficulty Level**: Filter by Easy, Medium, or Hard
 - **Question Categories**: Select specific categories to focus on
 

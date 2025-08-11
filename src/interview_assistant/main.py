@@ -84,45 +84,52 @@ def main():
         # Question count slider
         question_count = st.slider(
             "Number of Questions",
-            min_value=5,
-            max_value=20,
+            min_value=1,
+            max_value=10,
             value=10,
-            help="Select how many questions to generate"
+            help="Select how many questions to generate (maximum 10)"
         )
         
         # Difficulty filter
         difficulty_filter = st.multiselect(
             "Difficulty Level",
             options=["Easy", "Medium", "Hard"],
-            default=["Easy", "Medium", "Hard"],
-            help="Filter questions by difficulty"
+            default=["Easy"],
+            help="Select difficulty levels for questions (Easy: Basic knowledge, Medium: Practical experience, Hard: Advanced concepts)"
         )
         
         # Category filter
         category_filter = st.multiselect(
             "Question Categories",
             options=["Technical Skills", "Experience & Projects", "Problem Solving", "Behavioral"],
-            default=["Technical Skills", "Experience & Projects", "Problem Solving", "Behavioral"],
-            help="Filter questions by category"
+            default=["Technical Skills"],
+            help="Select categories to focus on (Technical: Skills & tools, Experience: Past work, Problem Solving: Analytical thinking, Behavioral: Soft skills)"
         )
+        
+        # Validation
+        if not difficulty_filter:
+            st.error("⚠️ Please select at least one difficulty level")
+        if not category_filter:
+            st.error("⚠️ Please select at least one category")
         
         st.markdown("---")
         st.markdown("### 📋 Instructions")
         st.markdown("""
         1. Upload a resume (PDF or Word format)
-        2. Click 'Generate Questions' button
-        3. Review and customize the generated questions
-        4. Use the filters to focus on specific areas
+        2. Select number of questions (max 10)
+        3. Choose difficulty levels and categories
+        4. Click 'Generate Questions' button
+        5. Review and export the generated questions
         """)
         
-        st.markdown("---")
-        st.markdown("### 🔧 Setup")
-        st.markdown("""
-        Make sure to set your OpenAI API key:
-        ```bash
-        export OPENAI_API_KEY=your_api_key_here
-        ```
-        """)
+        # st.markdown("---")
+        # st.markdown("### 🔧 Setup")
+        # st.markdown("""
+        # Make sure to set your OpenAI API key:
+        # ```bash
+        # export OPENAI_API_KEY=your_api_key_here
+        # ```
+        # """)
     
     # Main content area
     col1, col2 = st.columns([1, 1])
@@ -157,22 +164,70 @@ def main():
             if resume_text:
                 st.success("✅ Resume parsed successfully!")
                 
-                # Show resume preview
+                                # Show resume preview
                 with st.expander("📋 Resume Preview"):
-                    st.text_area("Resume Content", resume_text[:1000] + "..." if len(resume_text) > 1000 else resume_text, height=200)
+                    # Show cleaned, formatted text
+                    cleaned_preview = resume_text[:1000] + "..." if len(resume_text) > 1000 else resume_text
+                    st.text_area("Cleaned Resume Content", cleaned_preview, height=200, help="Cleaned and formatted text that will be sent to the AI")
+                    
+                    # Show text statistics
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.metric("Total Characters", len(resume_text))
+                    with col2:
+                        st.metric("Words", len(resume_text.split()))
+                    with col3:
+                        st.metric("Lines", resume_text.count('\n') + 1)
                 
                 # Generate questions button
                 if st.button("🚀 Generate Questions", type="primary", use_container_width=True):
-                    generate_questions(resume_text, question_count, difficulty_filter, category_filter)
+                    if not difficulty_filter:
+                        st.error("⚠️ Please select at least one difficulty level")
+                    elif not category_filter:
+                        st.error("⚠️ Please select at least one category")
+                    elif question_count > 10:
+                        st.error("⚠️ Question count cannot exceed 10")
+                    else:
+                        generate_questions(resume_text, question_count, difficulty_filter, category_filter)
+                
+                # Display generated questions below the button
+                if 'questions' in st.session_state and st.session_state.questions:
+                    st.markdown("---")
+                    st.subheader("🎯 Generated Questions")
+                    display_questions(st.session_state.questions, difficulty_filter, category_filter)
+                
+
     
     with col2:
-        st.header("🎯 Generated Questions")
+        st.header("📊 Question Statistics")
         
-        # Display questions if they exist in session state
+        # Show summary info
         if 'questions' in st.session_state and st.session_state.questions:
-            display_questions(st.session_state.questions, difficulty_filter, category_filter)
+            questions = st.session_state.questions
+            categories = {}
+            for question in questions:
+                category = question['category']
+                if category not in categories:
+                    categories[category] = []
+                categories[category].append(question)
+            
+            # Show statistics
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Total Questions", len(questions))
+            with col2:
+                st.metric("Categories", len(categories))
+            with col3:
+                hard_count = sum(1 for q in questions if q['difficulty'] == 'Hard')
+                st.metric("Hard Questions", hard_count)
+            
+            # Show category breakdown
+            st.markdown("---")
+            st.subheader("📂 Category Breakdown")
+            for category, category_questions in categories.items():
+                st.write(f"**{category}**: {len(category_questions)} questions")
         else:
-            st.info("👆 Upload a resume and click 'Generate Questions' to get started!")
+            st.info("👆 Upload a resume and click 'Generate Questions' to see statistics!")
 
 def generate_questions(resume_text: str, question_count: int, difficulty_filter: list, category_filter: list):
     """Generate interview questions using OpenAI"""
@@ -182,7 +237,7 @@ def generate_questions(resume_text: str, question_count: int, difficulty_filter:
         generator = QuestionGenerator()
         
         # Generate questions
-        questions = generator.generate_questions(resume_text, question_count)
+        questions = generator.generate_questions(resume_text, question_count, difficulty_filter, category_filter)
         
         if questions:
             # Store questions in session state
@@ -197,15 +252,12 @@ def generate_questions(resume_text: str, question_count: int, difficulty_filter:
 def display_questions(questions: list, difficulty_filter: list, category_filter: list):
     """Display generated questions with filtering"""
     
-    # Filter questions based on sidebar selections
-    filtered_questions = [
-        q for q in questions 
-        if q['difficulty'] in difficulty_filter and q['category'] in category_filter
-    ]
-    
+    filtered_questions = questions
     if not filtered_questions:
         st.warning("No questions match the current filters. Try adjusting the filter settings.")
         return
+    
+
     
     # Display questions by category
     categories = {}
@@ -215,17 +267,7 @@ def display_questions(questions: list, difficulty_filter: list, category_filter:
             categories[category] = []
         categories[category].append(question)
     
-    # Show statistics
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("Total Questions", len(filtered_questions))
-    with col2:
-        st.metric("Categories", len(categories))
-    with col3:
-        avg_difficulty = sum(1 for q in filtered_questions if q['difficulty'] == 'Hard') / len(filtered_questions) * 100
-        st.metric("Hard Questions", f"{avg_difficulty:.1f}%")
-    
-    st.markdown("---")
+
     
     # Display questions by category
     for category, category_questions in categories.items():
@@ -236,8 +278,7 @@ def display_questions(questions: list, difficulty_filter: list, category_filter:
             
             st.markdown(f"""
             <div class="question-card {difficulty_class}">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                    <span class="category-badge">{question['category']}</span>
+                <div style="display: flex; justify-content: end; align-items: center; margin-bottom: 0.5rem;">
                     <span class="category-badge" style="background-color: {'#d4edda' if question['difficulty'] == 'Easy' else '#fff3cd' if question['difficulty'] == 'Medium' else '#f8d7da'}; color: {'#155724' if question['difficulty'] == 'Easy' else '#856404' if question['difficulty'] == 'Medium' else '#721c24'};">
                         {question['difficulty']}
                     </span>

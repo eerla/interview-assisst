@@ -89,14 +89,8 @@ class QuestionGenerator:
 ### Utility Functions
 
 ```python
-def extract_skills_from_text(text: str) -> List[str]:
-    """Extract technical skills from resume text."""
-
-def estimate_experience_level(text: str) -> str:
-    """Estimate candidate experience level."""
-
-def calculate_resume_score(text: str) -> Dict[str, float]:
-    """Calculate various scores for the resume."""
+def format_questions_for_export(questions: List[Dict]) -> str:
+    """Format questions for export in a clean text format."""
 
 def validate_file_upload(uploaded_file) -> bool:
     """Validate uploaded file format and size."""
