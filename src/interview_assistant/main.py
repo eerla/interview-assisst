@@ -229,25 +229,53 @@ def main():
         else:
             st.info("👆 Upload a resume and click 'Generate Questions' to see statistics!")
 
+# def generate_questions(resume_text: str, question_count: int, difficulty_filter: list, category_filter: list):
+#     """Generate interview questions using OpenAI"""
+    
+#     with st.spinner("🤖 Generating questions with AI..."):
+#         # Initialize question generator
+#         generator = QuestionGenerator()
+        
+#         # Generate questions
+#         questions = generator.generate_questions(resume_text, question_count, difficulty_filter, category_filter)
+        
+#         if questions:
+#             # Store questions in session state
+#             st.session_state.questions = questions
+#             st.success(f"✅ Generated {len(questions)} questions!")
+            
+#             # Rerun to display questions
+#             st.rerun()
+#         else:
+#             st.error("❌ Failed to generate questions. Please check your OpenAI API key and try again.")
+
+
 def generate_questions(resume_text: str, question_count: int, difficulty_filter: list, category_filter: list):
     """Generate interview questions using OpenAI"""
-    
     with st.spinner("🤖 Generating questions with AI..."):
-        # Initialize question generator
         generator = QuestionGenerator()
-        
-        # Generate questions
-        questions = generator.generate_questions(resume_text, question_count, difficulty_filter, category_filter)
-        
-        if questions:
-            # Store questions in session state
+        try:
+            prompt = generator._create_question_prompt(resume_text, question_count, difficulty_filter, category_filter)
+            response = generator.client.chat.completions.create(
+                model=generator.model,
+                messages=[
+                    {"role": "system", "content": "You are an expert interviewer who creates relevant and insightful interview questions based on candidate resumes. You are also expert in python, pyspark, java, c++, c, javascript, html, css, sql databases, nosql databases, data structures, data modeling, algorithms, system design, microservices, distributed systems, cloud computing, artificial intelligence, machine learning, deep learning, natural language processing, computer vision, robotics, and other related technologies. You are also expert in data analysis, data visualization, data engineering, data science, data warehousing, data modeling, data cleaning, data integration, data transformation, data loading, data unloading, data archiving, data backup, data recovery, data replication, data synchronization, data migration, REST APIs, CICD pipelines, and other related technologies."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.7,
+                max_tokens=4000
+            )
+            llm_response = response.choices[0].message.content
+            questions = generator._parse_questions(llm_response)
+            insights = generator._parse_insights(llm_response)
+            ats_suggestions = generator._parse_ats_suggestions(llm_response)
             st.session_state.questions = questions
+            st.session_state.resume_insights = insights
+            st.session_state.ats_suggestions = ats_suggestions
             st.success(f"✅ Generated {len(questions)} questions!")
-            
-            # Rerun to display questions
             st.rerun()
-        else:
-            st.error("❌ Failed to generate questions. Please check your OpenAI API key and try again.")
+        except Exception as e:
+            st.error(f"❌ Failed to generate questions and insights: {e}")
 
 def display_questions(questions: list, difficulty_filter: list, category_filter: list):
     """Display generated questions with filtering"""
@@ -287,6 +315,15 @@ def display_questions(questions: list, difficulty_filter: list, category_filter:
             </div>
             """, unsafe_allow_html=True)
     
+    if 'resume_insights' in st.session_state and st.session_state.resume_insights:
+        st.markdown("---")
+        st.subheader("🔑 Resume Key Insights")
+        display_resume_insights(st.session_state.resume_insights)
+    if 'ats_suggestions' in st.session_state and st.session_state.ats_suggestions:
+        st.markdown("---")
+        st.subheader("📝 ATS Optimization Suggestions")
+        display_ats_suggestions(st.session_state.ats_suggestions)
+
     # Export options
     st.markdown("---")
     st.subheader("📤 Export Questions")
@@ -320,5 +357,38 @@ def export_to_clipboard(questions: list):
     st.text_area("Copy the questions below:", formatted_text, height=300)
     st.success("📋 Questions formatted for clipboard!")
 
+def display_resume_insights(insights: dict):
+    """Display extracted resume insights in a structured format."""
+    if not insights:
+        st.info("No insights extracted from resume.")
+        return
+    if 'technologies' in insights:
+        st.markdown(f"**Technologies/Skills:** {', '.join(insights['technologies']) if insights['technologies'] else 'N/A'}")
+    if 'companies' in insights and insights['companies']:
+        st.markdown("**Companies & Durations:**")
+        for c in insights['companies']:
+            st.markdown(f"- {c.get('name', 'Unknown')} ({c.get('duration', 'N/A')})")
+    if 'total_years_experience' in insights:
+        st.markdown(f"**Total Years Experience:** {insights['total_years_experience']}")
+    if 'education' in insights and insights['education']:
+        st.markdown("**Education:**")
+        for edu in insights['education']:
+            st.markdown(f"- {edu.get('degree', 'N/A')} at {edu.get('institution', 'N/A')} ({edu.get('year', 'N/A')})")
+    if 'certifications' in insights and insights['certifications']:
+        st.markdown(f"**Certifications:** {', '.join(insights['certifications'])}")
+    if 'major_projects' in insights and insights['major_projects']:
+        st.markdown("**Major Projects:**")
+        for proj in insights['major_projects']:
+            st.markdown(f"- {proj}")
+
+def display_ats_suggestions(suggestions: list):
+    """Display ATS optimization suggestions."""
+    if not suggestions:
+        st.info("No ATS suggestions available.")
+        return
+    st.markdown("**Suggestions to improve ATS compatibility:**")
+    for s in suggestions:
+        st.markdown(f"- {s}")
+        
 if __name__ == "__main__":
     main() 

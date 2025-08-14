@@ -76,47 +76,63 @@ class QuestionGenerator:
             return []
     
     def _create_question_prompt(self, resume_text: str, question_count: int, difficulty_filter: list, category_filter: list) -> str:
-        """
-        Create a detailed prompt for question generation
-        
-        Args:
-            resume_text: Resume content
-            question_count: Number of questions to generate
-            difficulty_filter: List of difficulty levels
-            category_filter: List of categories
-            
-        Returns:
-            str: Formatted prompt for OpenAI
-        """
-        return f"""
-        Based on the following resume, generate exactly {question_count} relevant interview questions for a technical role.
-        
-        REQUIREMENTS:
-        - Difficulty levels: {', '.join(difficulty_filter)}
-        - Categories: {', '.join(category_filter)}
-        - Total questions: {question_count}
-        
-        Resume Content:
-        {resume_text[:4000]}
-        
-        Generate questions in this EXACT format with category headers:
-        
-        {self._get_format_example(category_filter)}
-        
-        CRITICAL FORMATTING RULES: 
-        - You MUST include the category headers exactly as shown above
-        - Start each category with "CATEGORY_NAME:" (e.g., "TECHNICAL SKILLS:")
-        - Then list numbered questions under each category
-        - Each question must start with [DIFFICULTY] where difficulty is one of: {', '.join(difficulty_filter)}
-        - Use only the specified categories: {', '.join(category_filter)}
-        - Make questions specific to the candidate's background and experience
-        - No additional text, explanations, or markdown formatting
-        - Example format:
-          TECHNICAL SKILLS:
-          1. [EASY] What is your experience with Python?
-          2. [MEDIUM] Can you explain the difference between a list and a tuple?
-        """
+            """
+            Create a detailed prompt for question generation, key insights extraction, and ATS suggestions
     
+            Args:
+                    resume_text: Resume content
+                    question_count: Number of questions to generate
+                    difficulty_filter: List of difficulty levels
+                    category_filter: List of categories
+        
+            Returns:
+                    str: Formatted prompt for OpenAI
+            """
+            return f"""
+            Given the following resume, perform ALL of the following tasks:
+    
+            1. Extract and return these key insights in JSON:
+                    - technologies (skills, tools, programming languages, frameworks)
+                    - companies (with durations, e.g., company name and years/months worked)
+                    - total_years_experience (if possible)
+                    - education (degree, institution, graduation year)
+                    - certifications (if any)
+                    - major_projects (if any)
+            2. Generate exactly {question_count} relevant interview questions for a technical role, using:
+                    - Difficulty levels: {', '.join(difficulty_filter)}
+                    - Categories: {', '.join(category_filter)}
+                    - Make questions specific to the candidate's background and experience
+                    - Use this format with category headers:
+            {self._get_format_example(category_filter)}
+            3. Provide 3 actionable suggestions to make this resume more ATS (Applicant Tracking System) friendly. Focus on missing keywords, formatting, clarity, and completeness.
+    
+            Resume Content:
+            {resume_text[:5000]}
+    
+            Return your answer in the following JSON structure:
+            {{
+                "insights": {{
+                    "technologies": [...],
+                    "companies": [{{"name": "...", "duration": "..."}}],
+                    "total_years_experience": ...,
+                    "education": [{{"degree": "...", "institution": "...", "year": "..."}}],
+                    "certifications": [...],
+                    "major_projects": [...]
+                }},
+                "questions": [
+                    {{"category": "...", "difficulty": "...", "question": "..."}},
+                    ...
+                ],
+                "ats_suggestions": ["...", "...", "..."]
+            }}
+    
+            CRITICAL RULES:
+            - Return ONLY the JSON object, no explanations or markdown.
+            - For questions, use the specified categories and difficulty levels.
+            - For insights, fill as much as possible from the resume.
+            - For ATS suggestions, be specific and actionable.
+            """
+
     def _get_format_example(self, categories: list) -> str:
         """Get format example based on selected categories"""
         examples = []
@@ -124,50 +140,56 @@ class QuestionGenerator:
             examples.append(f"{category.upper()}:\n1. [EASY] [Question text]\n2. [MEDIUM] [Question text]\n3. [HARD] [Question text]")
         return "\n\n".join(examples)
     
-    def _parse_questions(self, questions_text: str) -> List[Dict]:
+    def _parse_questions(self, llm_response: str) -> List[Dict]:
         """
-        Parse the generated questions text into structured format
-        
+        Parse the questions from the LLM's JSON response.
         Args:
-            questions_text: Raw text from OpenAI response
-            
+            llm_response: Raw text from OpenAI response (expected to be JSON)
         Returns:
             List[Dict]: Structured questions with categories and difficulty levels
         """
-        questions = []
-        current_category = None
-        lines = questions_text.split('\n')
-        print("--------------------------------")
-        for line in lines:
-            print(f"{line}")
-            line = line.strip()
-            if not line:
-                continue
-                
-            # Check if line is a category header (more flexible detection)
-            if line.endswith(':') and len(line) > 1:
-                # Remove the colon and clean up
-                current_category = line[:-1].strip()
-                # Convert to title case for consistency
-                current_category = current_category.title()
+        import json
+        try:
+            data = json.loads(llm_response)
+            questions = data.get("questions", [])
+            return questions
+        except Exception as e:
+            st.error(f"Failed to parse questions from LLM response: {e}")
+            return []
 
-                continue
-            
-            # Check if line starts with a number (question)
-            if line and line[0].isdigit() and '. ' in line:
-                question_text = line.split('. ', 1)[1] if '. ' in line else line
-                
-                # Extract difficulty and clean question text
-                difficulty, clean_question = self._extract_difficulty_and_clean(question_text)
-                
-                if current_category and difficulty and clean_question:
-                    questions.append({
-                        'category': current_category,
-                        'question': clean_question,
-                        'difficulty': difficulty
-                    })
+    def _parse_insights(self, llm_response: str) -> Dict:
+        """
+        Parse the key insights from the LLM's JSON response.
+        Args:
+            llm_response: Raw text from OpenAI response (expected to be JSON)
+        Returns:
+            Dict: Extracted insights
+        """
+        import json
+        try:
+            data = json.loads(llm_response)
+            insights = data.get("insights", {})
+            return insights
+        except Exception as e:
+            st.error(f"Failed to parse insights from LLM response: {e}")
+            return {}
 
-        return questions
+    def _parse_ats_suggestions(self, llm_response: str) -> List[str]:
+        """
+        Parse the ATS suggestions from the LLM's JSON response.
+        Args:
+            llm_response: Raw text from OpenAI response (expected to be JSON)
+        Returns:
+            List[str]: List of ATS suggestions
+        """
+        import json
+        try:
+            data = json.loads(llm_response)
+            ats_suggestions = data.get("ats_suggestions", [])
+            return ats_suggestions
+        except Exception as e:
+            st.error(f"Failed to parse ATS suggestions from LLM response: {e}")
+            return []
     
     def _extract_difficulty_and_clean(self, question_text: str) -> tuple:
         """
