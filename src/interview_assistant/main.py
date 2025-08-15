@@ -49,11 +49,12 @@ st.markdown("""
         margin: 2rem 0;
     }
     .question-card {
-        background-color: white;
-        padding: 1.5rem;
+        background-color: black;
+        padding: 0.5rem;
         border-radius: 8px;
         border-left: 4px solid #1f77b4;
         margin: 1rem 0;
+        color: white;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     .difficulty-easy { border-left-color: #28a745; }
@@ -66,6 +67,18 @@ st.markdown("""
         border-radius: 15px;
         font-size: 0.875rem;
         font-weight: 500;
+    }
+    .category-badge.easy {
+        background-color: #d4edda !important; /* light green */
+        color: #155724 !important;
+    }
+    .category-badge.medium {
+        background-color: #fff3cd !important; /* light yellow */
+        color: #856404 !important;
+    }
+    .category-badge.hard {
+        background-color: #f8d7da !important; /* light red */
+        color: #721c24 !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -132,13 +145,13 @@ def main():
         # """)
     
     # Main content area
-    col1, col2 = st.columns([1, 1])
+    col1, col2 = st.columns([1, 0.5])
     
     with col1:
         st.header("📄 Resume Upload")
         
         # File upload section
-        st.markdown('<div class="upload-section">', unsafe_allow_html=True)
+        # st.markdown('<div class="upload-section">', unsafe_allow_html=True)
         uploaded_file = st.file_uploader(
             "Choose a resume file",
             type=['pdf', 'docx'],
@@ -278,11 +291,11 @@ def display_questions(questions: list):
         for i, question in enumerate(category_questions, 1):
             
             difficulty_class = f"difficulty-{question['difficulty'].lower()}"
-            
+            difficulty_badge_class = f"category-badge {question['difficulty'].lower()}"
             st.markdown(f"""
             <div class="question-card {difficulty_class}">
                 <div style="display: flex; justify-content: end; align-items: center; margin-bottom: 0.5rem;">
-                    <span class="category-badge" style="background-color: {'#d4edda' if question['difficulty'] == 'Easy' else '#fff3cd' if question['difficulty'] == 'Medium' else '#f8d7da'}; color: {'#155724' if question['difficulty'] == 'Easy' else '#856404' if question['difficulty'] == 'Medium' else '#721c24'};">
+                    <span class="{difficulty_badge_class}">
                         {question['difficulty']}
                     </span>
                 </div>
