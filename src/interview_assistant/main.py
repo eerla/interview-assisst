@@ -229,27 +229,6 @@ def main():
         else:
             st.info("👆 Upload a resume and click 'Generate Questions' to see statistics!")
 
-# def generate_questions(resume_text: str, question_count: int, difficulty_filter: list, category_filter: list):
-#     """Generate interview questions using OpenAI"""
-    
-#     with st.spinner("🤖 Generating questions with AI..."):
-#         # Initialize question generator
-#         generator = QuestionGenerator()
-        
-#         # Generate questions
-#         questions = generator.generate_questions(resume_text, question_count, difficulty_filter, category_filter)
-        
-#         if questions:
-#             # Store questions in session state
-#             st.session_state.questions = questions
-#             st.success(f"✅ Generated {len(questions)} questions!")
-            
-#             # Rerun to display questions
-#             st.rerun()
-#         else:
-#             st.error("❌ Failed to generate questions. Please check your OpenAI API key and try again.")
-
-
 def generate_questions(resume_text: str, question_count: int, difficulty_filter: list, category_filter: list):
     """Generate interview questions using OpenAI"""
     with st.spinner("🤖 Generating questions with AI..."):

@@ -12,6 +12,7 @@ poetry install
 # 4. Activate virtual environment (Poetry 2.0+)
 poetry env use python3.10
 poetry shell
+poetry env activate
 
 # 5. Run the application (new structure)
 poetry run streamlit run run_app.py
