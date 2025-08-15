@@ -194,10 +194,9 @@ def main():
                 if 'questions' in st.session_state and st.session_state.questions:
                     st.markdown("---")
                     st.subheader("🎯 Generated Questions")
-                    display_questions(st.session_state.questions, difficulty_filter, category_filter)
+                    display_questions(st.session_state.questions)
                 
 
-    
     with col2:
         st.header("📊 Question Statistics")
         
@@ -256,16 +255,14 @@ def generate_questions(resume_text: str, question_count: int, difficulty_filter:
         except Exception as e:
             st.error(f"❌ Failed to generate questions and insights: {e}")
 
-def display_questions(questions: list, difficulty_filter: list, category_filter: list):
+def display_questions(questions: list):
     """Display generated questions with filtering"""
     
     filtered_questions = questions
     if not filtered_questions:
         st.warning("No questions match the current filters. Try adjusting the filter settings.")
         return
-    
 
-    
     # Display questions by category
     categories = {}
     for question in filtered_questions:
@@ -274,13 +271,12 @@ def display_questions(questions: list, difficulty_filter: list, category_filter:
             categories[category] = []
         categories[category].append(question)
     
-
-    
     # Display questions by category
     for category, category_questions in categories.items():
         st.subheader(f"📂 {category}")
         
         for i, question in enumerate(category_questions, 1):
+            
             difficulty_class = f"difficulty-{question['difficulty'].lower()}"
             
             st.markdown(f"""
