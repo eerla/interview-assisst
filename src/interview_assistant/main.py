@@ -114,9 +114,9 @@ def main():
         # Category filter
         category_filter = st.multiselect(
             "Question Categories",
-            options=["Technical Skills", "Experience & Projects", "Problem Solving", "Behavioral"],
+            options=["Technical Skills", "Experience & Projects", "Problem Solving", "Behavioral", "Coding Test"],
             default=["Technical Skills"],
-            help="Select categories to focus on (Technical: Skills & tools, Experience: Past work, Problem Solving: Analytical thinking, Behavioral: Soft skills)"
+            help="Select categories to focus on (Technical: Skills & tools, Experience: Past work, Problem Solving: Analytical thinking, Behavioral: Soft skills, Coding Test: LeetCode-style coding questions)"
         )
         
         # Validation
@@ -246,7 +246,15 @@ def generate_questions(resume_text: str, question_count: int, difficulty_filter:
     with st.spinner("🤖 Generating questions with AI..."):
         generator = QuestionGenerator()
         try:
-            prompt = generator._create_question_prompt(resume_text, question_count, difficulty_filter, category_filter)
+            coding_test_selected = "Coding Test" in category_filter
+            coding_test_instruction = ""
+            if coding_test_selected:
+                coding_test_instruction = (
+                    "\n\nAdditionally, generate up to 2 LeetCode-style coding questions in Python for the 'Coding Test' category. "
+                    "Each coding question should include: a clear problem statement, input/output format, at least 2 sample test cases, and difficulty based on the selected level. "
+                    "Format the coding questions with a markdown code block for the function signature and test cases."
+                )
+            prompt = generator._create_question_prompt(resume_text, question_count, difficulty_filter, category_filter) + coding_test_instruction
             response = generator.client.chat.completions.create(
                 model=generator.model,
                 messages=[
@@ -287,21 +295,35 @@ def display_questions(questions: list):
     # Display questions by category
     for category, category_questions in categories.items():
         st.subheader(f"📂 {category}")
-        
         for i, question in enumerate(category_questions, 1):
-            
             difficulty_class = f"difficulty-{question['difficulty'].lower()}"
             difficulty_badge_class = f"category-badge {question['difficulty'].lower()}"
-            st.markdown(f"""
-            <div class="question-card {difficulty_class}">
-                <div style="display: flex; justify-content: end; align-items: center; margin-bottom: 0.5rem;">
-                    <span class="{difficulty_badge_class}">
-                        {question['difficulty']}
-                    </span>
+            if category == "Coding Test":
+                st.markdown(f"""
+                <div class="question-card {difficulty_class}">
+                    <div style="display: flex; justify-content: end; align-items: center; margin-bottom: 0.5rem;">
+                        <span class="{difficulty_badge_class}">{question['difficulty']}</span>
+                    </div>
                 </div>
-                <p style="margin: 0; font-size: 1.1rem;"><strong>{i}.</strong> {question['question']}</p>
-            </div>
-            """, unsafe_allow_html=True)
+                """, unsafe_allow_html=True)
+                st.markdown(f"**{i}. {question['question']}**")
+                if 'instructions' in question:
+                    st.markdown(question['instructions'])
+                if 'test_cases' in question:
+                    st.markdown("**Sample Test Cases:**")
+                    for tc in question['test_cases']:
+                        st.code(tc, language="python")
+            else:
+                st.markdown(f"""
+                <div class="question-card {difficulty_class}">
+                    <div style="display: flex; justify-content: end; align-items: center; margin-bottom: 0.5rem;">
+                        <span class="{difficulty_badge_class}">
+                            {question['difficulty']}
+                        </span>
+                    </div>
+                    <p style="margin: 0; font-size: 1.1rem;"><strong>{i}.</strong> {question['question']}</p>
+                </div>
+                """, unsafe_allow_html=True)
     
     if 'resume_insights' in st.session_state and st.session_state.resume_insights:
         st.markdown("---")
