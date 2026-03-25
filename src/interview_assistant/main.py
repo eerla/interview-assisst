@@ -261,8 +261,7 @@ def generate_questions(resume_text: str, question_count: int, difficulty_filter:
                     {"role": "system", "content": "You are an expert interviewer who creates relevant and insightful interview questions based on candidate resumes. You are also expert in python, pyspark, java, c++, c, javascript, html, css, sql databases, nosql databases, data structures, data modeling, algorithms, system design, microservices, distributed systems, cloud computing, artificial intelligence, machine learning, deep learning, natural language processing, computer vision, robotics, and other related technologies. You are also expert in data analysis, data visualization, data engineering, data science, data warehousing, data modeling, data cleaning, data integration, data transformation, data loading, data unloading, data archiving, data backup, data recovery, data replication, data synchronization, data migration, REST APIs, CICD pipelines, and other related technologies."},
                     {"role": "user", "content": prompt}
                 ],
-                temperature=0.7,
-                max_tokens=4000
+                max_completion_tokens=4000
             )
             llm_response = response.choices[0].message.content
             questions = generator._parse_questions(llm_response)
