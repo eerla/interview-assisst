@@ -246,34 +246,34 @@ def generate_questions(resume_text: str, question_count: int, difficulty_filter:
     with st.spinner("🤖 Generating questions with AI..."):
         generator = QuestionGenerator()
         try:
-            coding_test_selected = "Coding Test" in category_filter
-            coding_test_instruction = ""
-            if coding_test_selected:
-                coding_test_instruction = (
-                    "\n\nAdditionally, generate up to 2 LeetCode-style coding questions in Python for the 'Coding Test' category. "
-                    "Each coding question should include: a clear problem statement, input/output format, at least 2 sample test cases, and difficulty based on the selected level. "
-                    "Format the coding questions with a markdown code block for the function signature and test cases."
-                )
-            prompt = generator._create_question_prompt(resume_text, question_count, difficulty_filter, category_filter) + coding_test_instruction
-            response = generator.client.chat.completions.create(
-                model=generator.model,
-                messages=[
-                    {"role": "system", "content": "You are an expert interviewer who creates relevant and insightful interview questions based on candidate resumes. You are also expert in python, pyspark, java, c++, c, javascript, html, css, sql databases, nosql databases, data structures, data modeling, algorithms, system design, microservices, distributed systems, cloud computing, artificial intelligence, machine learning, deep learning, natural language processing, computer vision, robotics, and other related technologies. You are also expert in data analysis, data visualization, data engineering, data science, data warehousing, data modeling, data cleaning, data integration, data transformation, data loading, data unloading, data archiving, data backup, data recovery, data replication, data synchronization, data migration, REST APIs, CICD pipelines, and other related technologies."},
-                    {"role": "user", "content": prompt}
-                ],
-                max_completion_tokens=4000
+            # Generate all content in one call
+            response = generator.generate_questions(
+                resume_text, 
+                question_count, 
+                difficulty_filter, 
+                category_filter
             )
-            llm_response = response.choices[0].message.content
-            questions = generator._parse_questions(llm_response)
-            insights = generator._parse_insights(llm_response)
-            ats_suggestions = generator._parse_ats_suggestions(llm_response)
+            
+            # Extract data from response
+            questions = response.get("questions", [])
+            insights = response.get("insights", {})
+            ats_suggestions = response.get("ats_suggestions", [])
+            
+            # Store in session state
             st.session_state.questions = questions
             st.session_state.resume_insights = insights
             st.session_state.ats_suggestions = ats_suggestions
             st.success(f"✅ Generated {len(questions)} questions!")
-            st.rerun()
+            
+            # Debug: Show what we got
+            st.write(f"Debug: Stored {len(questions)} questions in session state")
+            st.write(f"Debug: Session state keys: {list(st.session_state.keys())}")
+            
         except Exception as e:
             st.error(f"❌ Failed to generate questions and insights: {e}")
+            st.write("Full error details:")
+            st.code(str(e))
+            # Don't rerun on error so user can see the error
 
 def display_questions(questions: list):
     """Display generated questions with filtering"""

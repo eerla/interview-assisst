@@ -24,9 +24,9 @@ class QuestionGenerator:
     def generate_questions(self, resume_text: str, 
                                 question_count: int = 10, 
                                 difficulty_filter: list = ["Easy"], 
-                                category_filter: list = ["Technical Skills"]) -> List[Dict]:
+                                category_filter: list = ["Technical Skills"]) -> Dict:
         """
-        Generate interview questions based on resume content
+        Generate interview questions, insights, and ATS suggestions based on resume content
         
         Args:
             resume_text: Extracted text from resume
@@ -35,7 +35,7 @@ class QuestionGenerator:
             category_filter: List of categories to include
             
         Returns:
-            List[Dict]: List of questions with categories and difficulty levels
+            Dict: Complete response with questions, insights, and ATS suggestions
         """
         try:
             # Validate question count
@@ -43,10 +43,18 @@ class QuestionGenerator:
                 question_count = 10
                 st.warning("Question count limited to maximum of 10")
             
-            # Create the prompt for question generation
-            prompt = self._create_question_prompt(resume_text, question_count, difficulty_filter, category_filter)
+            # Handle coding test instructions
+            coding_test_instruction = ""
+            if "Coding Test" in category_filter:
+                coding_test_instruction = (
+                    "\n\nAdditionally, generate up to 2 LeetCode-style coding questions in Python for the 'Coding Test' category. "
+                    "Each coding question should include: a clear problem statement, input/output format, at least 2 sample test cases, and difficulty based on the selected level. "
+                    "Format the coding questions with a markdown code block for the function signature and test cases."
+                )
             
-
+            # Create the prompt for question generation
+            prompt = self._create_question_prompt(resume_text, question_count, difficulty_filter, category_filter) + coding_test_instruction
+            
             # Generate questions using OpenAI
             response = self.client.chat.completions.create(
                 model=self.model,
@@ -54,26 +62,55 @@ class QuestionGenerator:
                     {"role": "system", "content": "You are an expert interviewer who creates relevant and insightful interview questions based on candidate resumes. You are also expert in python, pyspark, java, c++, c, javascript, html, css, sql databases, nosql databases, data structures, data modeling, algorithms, system design, microservices, distributed systems, cloud computing, artificial intelligence, machine learning, deep learning, natural language processing, computer vision, robotics, and other related technologies. You are also expert in data analysis, data visualization, data engineering, data science, data warehousing, data modeling, data cleaning, data integration, data transformation, data loading, data unloading, data archiving, data backup, data recovery, data replication, data synchronization, data migration, REST APIs, CICD pipelines, and other related technologies."},
                     {"role": "user", "content": prompt}
                 ],
-                temperature=0.7,
                 max_completion_tokens=4000
             )
             
-            # Parse the response
-            questions_text = response.choices[0].message.content
-
+            # Parse the complete response
+            llm_response = response.choices[0].message.content
+            st.write("Debug: Raw LLM response received")
+            st.write(f"Debug: Response length: {len(llm_response)} characters")
             
-            questions = self._parse_questions(questions_text)
-            # Validate that we got the expected number of questions
-            if len(questions) != question_count:
-                st.warning(f"Generated {len(questions)} questions instead of requested {question_count}.\
-                     This may be due to LLM response format.")
+            if not llm_response or llm_response.strip() == "":
+                st.error("Empty response from OpenAI. This might be due to API issues or content filtering.")
+                return {
+                    "questions": [],
+                    "insights": {},
+                    "ats_suggestions": []
+                }
             
-            return questions
+            # Parse and return the complete structured response
+            import json
+            try:
+                data = json.loads(llm_response)
+                st.write("Debug: JSON parsed successfully")
+                
+                result = {
+                    "questions": data.get("questions", []),
+                    "insights": data.get("insights", {}),
+                    "ats_suggestions": data.get("ats_suggestions", [])
+                }
+                
+                st.write(f"Debug: Returning {len(result['questions'])} questions")
+                return result
+                
+            except json.JSONDecodeError as e:
+                st.error(f"JSON parsing error: {e}")
+                st.write("Debug: Raw response was:")
+                st.code(llm_response[:500])  # Show first 500 chars
+                return {
+                    "questions": [],
+                    "insights": {},
+                    "ats_suggestions": []
+                }
             
         except Exception as e:
             st.error(f"Error generating questions: {str(e)}")
             st.error("Please check your OpenAI API key and try again.")
-            return []
+            return {
+                "questions": [],
+                "insights": {},
+                "ats_suggestions": []
+            }
     
     def _create_question_prompt(self, resume_text: str, question_count: int, difficulty_filter: list, category_filter: list) -> str:
             """
@@ -137,7 +174,7 @@ class QuestionGenerator:
         """Get format example based on selected categories"""
         examples = []
         for category in categories:
-            examples.append(f"{category.upper()}:\n1. [EASY] [Question text]\n2. [MEDIUM] [Question text]\n3. [HARD] [Question text]")
+            examples.append(f"{category.upper()}:\n1. [Easy] [Question text]\n2. [Medium] [Question text]\n3. [Hard] [Question text]")
         return "\n\n".join(examples)
     
     def _parse_questions(self, llm_response: str) -> List[Dict]:
@@ -232,3 +269,6 @@ class QuestionGenerator:
         clean_question = ' '.join(clean_question.split())  # Normalize multiple spaces
         
         return difficulty, clean_question 
+
+if __name__ == "__main__":
+    pass
