@@ -125,50 +125,39 @@ class QuestionGenerator:
             Returns:
                     str: Formatted prompt for OpenAI
             """
-            return f"""
-            Given the following resume, perform ALL of the following tasks:
-    
-            1. Extract and return these key insights in JSON:
-                    - technologies (skills, tools, programming languages, frameworks)
-                    - companies (with durations, e.g., company name and years/months worked)
-                    - total_years_experience (if possible)
-                    - education (degree, institution, graduation year)
-                    - certifications (if any)
-                    - major_projects (if any)
-            2. Generate exactly {question_count} relevant interview questions for a technical role, using:
-                    - Difficulty levels: {', '.join(difficulty_filter)}
-                    - Categories: {', '.join(category_filter)}
-                    - Make questions specific to the candidate's background and experience
-                    - Use this format with category headers:
-            {self._get_format_example(category_filter)}
-            3. Provide 3 actionable suggestions to make this resume more ATS (Applicant Tracking System) friendly. Focus on missing keywords, formatting, clarity, and completeness.
-    
-            Resume Content:
-            {resume_text[:5000]}
-    
-            Return your answer in the following JSON structure:
-            {{
-                "insights": {{
-                    "technologies": [...],
-                    "companies": [{{"name": "...", "duration": "..."}}],
-                    "total_years_experience": ...,
-                    "education": [{{"degree": "...", "institution": "...", "year": "..."}}],
-                    "certifications": [...],
-                    "major_projects": [...]
-                }},
-                "questions": [
-                    {{"category": "...", "difficulty": "...", "question": "..."}},
-                    ...
-                ],
-                "ats_suggestions": ["...", "...", "..."]
-            }}
-    
-            CRITICAL RULES:
-            - Return ONLY the JSON object, no explanations or markdown.
-            - For questions, use the specified categories and difficulty levels.
-            - For insights, fill as much as possible from the resume.
-            - For ATS suggestions, be specific and actionable.
-            """
+            return f"""Analyze this resume and generate interview questions.
+
+RESUME:
+{resume_text[:3000]}
+
+TASKS:
+1. Generate {question_count} interview questions
+2. Extract key insights 
+3. Provide ATS suggestions
+
+REQUIREMENTS:
+- Questions for categories: {', '.join(category_filter)}
+- Difficulty levels: {', '.join(difficulty_filter)}
+- Each question needs: category, difficulty, question text
+
+RESPONSE FORMAT (JSON only):
+{{
+    "questions": [
+        {{"category": "Technical Skills", "difficulty": "Easy", "question": "What experience do you have with Python?"}},
+        {{"category": "Technical Skills", "difficulty": "Medium", "question": "Describe a complex algorithm you implemented."}}
+    ],
+    "insights": {{
+        "technologies": ["Python", "React", "AWS"],
+        "companies": [{{"name": "Tech Corp", "duration": "2 years"}}],
+        "total_years_experience": 5,
+        "education": [{{"degree": "BS Computer Science", "institution": "University"}}],
+        "certifications": ["AWS Certified"],
+        "major_projects": ["E-commerce platform"]
+    }},
+    "ats_suggestions": ["Add more keywords", "Quantify achievements"]
+}}
+
+Return ONLY valid JSON. No explanations."""
 
     def _get_format_example(self, categories: list) -> str:
         """Get format example based on selected categories"""
