@@ -59,7 +59,7 @@ class ResumeParser:
             # Clean the extracted text
             cleaned_text = ResumeParser.clean_text(text)
             return cleaned_text
-        except Exception as _:
+        except Exception:
             logger.exception("Error reading PDF file")
             return None
 
@@ -77,7 +77,7 @@ class ResumeParser:
             # Clean the extracted text
             cleaned_text = ResumeParser.clean_text(text)
             return cleaned_text
-        except Exception as _:
+        except Exception:
             logger.exception("Error reading Word document")
             return None
 

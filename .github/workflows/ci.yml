@@ -33,7 +33,7 @@ jobs:
         run: poetry install --with dev
 
       - name: Run linter (flake8)
-        run: poetry run flake8 src tests
+        run: poetry run flake8 src tests --max-line-length=88 --extend-ignore=E203,W503
 
       - name: Check formatting (black)
         run: poetry run black --check src tests

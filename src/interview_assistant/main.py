@@ -15,8 +15,6 @@ from reportlab.platypus import (  # type: ignore[import-untyped]
     SimpleDocTemplate,
     Paragraph,
     Spacer,
-    Table,
-    TableStyle,
 )
 from reportlab.lib import colors  # type: ignore[import-untyped]
 from typing import Any, Dict, List, Optional
