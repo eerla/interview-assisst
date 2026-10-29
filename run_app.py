@@ -4,7 +4,12 @@ Entry point for the Interview Assistant Streamlit application.
 This script can be run directly with: streamlit run run_app.py
 """
 
+import sys
+import os
 from dotenv import load_dotenv
+
+# Add the src directory to Python path so interview_assistant is importable
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 # Load environment variables from .env file
 load_dotenv()
@@ -13,4 +18,4 @@ load_dotenv()
 from interview_assistant.main import main
 
 if __name__ == "__main__":
-    main() 
+    main()
