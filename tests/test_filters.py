@@ -64,9 +64,7 @@ class TestDisplayQuestionsFiltering:
         # All 5 questions should be displayed (no filtering)
         # Count subheader calls for categories
         category_calls = [
-            call
-            for call in mock_streamlit.subheader.call_args_list
-            if "📂" in str(call)
+            call for call in mock_streamlit.subheader.call_args_list if "📂" in str(call)
         ]
         assert len(category_calls) == 4  # 4 unique categories
 
@@ -76,9 +74,7 @@ class TestDisplayQuestionsFiltering:
         display_questions(sample_questions, ["Easy"], [])
 
         category_calls = [
-            call
-            for call in mock_streamlit.subheader.call_args_list
-            if "📂" in str(call)
+            call for call in mock_streamlit.subheader.call_args_list if "📂" in str(call)
         ]
         categories = [str(c[0][0]) for c in category_calls]
         # Easy questions: Technical Skills, Behavioral
@@ -91,9 +87,7 @@ class TestDisplayQuestionsFiltering:
         display_questions(sample_questions, [], ["Technical Skills"])
 
         category_calls = [
-            call
-            for call in mock_streamlit.subheader.call_args_list
-            if "📂" in str(call)
+            call for call in mock_streamlit.subheader.call_args_list if "📂" in str(call)
         ]
         categories = [str(c[0][0]) for c in category_calls]
         assert len(categories) == 1
@@ -105,9 +99,7 @@ class TestDisplayQuestionsFiltering:
         display_questions(sample_questions, ["Easy"], ["Technical Skills"])
 
         category_calls = [
-            call
-            for call in mock_streamlit.subheader.call_args_list
-            if "📂" in str(call)
+            call for call in mock_streamlit.subheader.call_args_list if "📂" in str(call)
         ]
         categories = [str(c[0][0]) for c in category_calls]
         assert len(categories) == 1

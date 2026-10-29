@@ -154,13 +154,15 @@ def main() -> None:
 
         st.markdown("---")
         st.markdown("### 📋 Instructions")
-        st.markdown("""
+        st.markdown(
+            """
         1. Upload a resume (PDF or Word format)
         2. Select number of questions (max 10)
         3. Choose difficulty levels and categories
         4. Click 'Generate Questions' button
         5. Review and export the generated questions
-        """)
+        """
+        )
 
     # Main content area
     col1, col2 = st.columns([1, 0.5])
