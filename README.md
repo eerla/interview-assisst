@@ -53,7 +53,7 @@ cp env_example.txt .env
 
 # Edit .env file and add your OpenAI API key
 OPENAI_API_KEY=your_openai_api_key_here
-OPENAI_MODEL=gpt-3.5-turbo
+OPENAI_MODEL=gpt-4-1106-preview
 ```
 
 ### 4. Run the Application
@@ -69,6 +69,28 @@ streamlit run run_app.py
 ```
 
 The application will open in your browser at `http://localhost:8501`
+
+### 🐳 Docker Deployment
+
+Build and run with Docker:
+
+```bash
+docker build -t interview-assistant .
+docker run -p 8501:8501 -e OPENAI_API_KEY=your_key interview-assistant
+```
+
+Or with docker-compose:
+
+```yaml
+services:
+  interview-assistant:
+    build: .
+    ports:
+      - "8501:8501"
+    environment:
+      - OPENAI_API_KEY=your_openai_api_key
+      - OPENAI_MODEL=gpt-4-1106-preview
+```
 
 ## 📖 Usage Guide
 
@@ -156,14 +178,24 @@ interview-assisst/
 
 ### Local Development
 ```bash
-streamlit run app.py
+poetry run streamlit run run_app.py
 ```
 
-### Cloud Deployment
-The application can be deployed to:
-- **Streamlit Cloud**: Direct deployment from GitHub
-- **Heroku**: Using the provided requirements.txt
-- **AWS/GCP**: Containerized deployment with Docker
+### Streamlit Cloud
+1. Push code to GitHub
+2. Connect repository to Streamlit Cloud
+3. Set environment variables (`OPENAI_API_KEY`, `OPENAI_MODEL`) in Streamlit Cloud dashboard
+4. Deploy
+
+### Docker Deployment
+Build the image and run:
+
+```bash
+docker build -t interview-assistant .
+docker run -p 8501:8501 -e OPENAI_API_KEY=your_key interview-assistant
+```
+
+The Dockerfile at the project root provides a production-ready container based on `python:3.11-slim`.
 
 ## 🤝 Contributing
 

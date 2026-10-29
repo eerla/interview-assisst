@@ -10,4 +10,4 @@ __email__ = "your.email@example.com"
 
 from .main import main
 
-__all__ = ["main"] 
+__all__ = ["main"]

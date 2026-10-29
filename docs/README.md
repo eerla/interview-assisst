@@ -28,6 +28,9 @@ interview-assisst/
 ├── docs/                        # Documentation
 ├── scripts/                     # Utility scripts
 ├── config/                      # Configuration files
+├── .github/workflows/ci.yml     # CI pipeline
+├── Dockerfile                   # Containerized deployment
+├── LICENSE                      # MIT License
 ├── pyproject.toml              # Poetry configuration
 ├── requirements.txt            # Dependencies
 └── README.md                   # Project overview
@@ -196,7 +199,7 @@ make check
 
 ### Local Development
 ```bash
-poetry run streamlit run src/interview_assistant/main.py
+poetry run streamlit run run_app.py
 ```
 
 ### Streamlit Cloud
@@ -206,20 +209,14 @@ poetry run streamlit run src/interview_assistant/main.py
 4. Deploy
 
 ### Docker Deployment
-```dockerfile
-FROM python:3.10-slim
+Build the image and run:
 
-WORKDIR /app
-COPY . .
-
-RUN pip install poetry
-RUN poetry config virtualenvs.create false
-RUN poetry install --no-dev
-
-EXPOSE 8501
-
-CMD ["streamlit", "run", "src/interview_assistant/main.py"]
+```bash
+docker build -t interview-assistant .
+docker run -p 8501:8501 -e OPENAI_API_KEY=your_openai_api_key interview-assistant
 ```
+
+The `Dockerfile` at the project root provides a production-ready container based on `python:3.11-slim`.
 
 ## Troubleshooting
 
